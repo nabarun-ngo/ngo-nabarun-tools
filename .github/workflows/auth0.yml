@@ -1,0 +1,52 @@
+name: Sync Auth0 tenants
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tenant:
+        description: 'Source Tenant'
+        required: true
+        type: choice
+        options:
+          - DEV
+          - STAGE
+          - PROD
+      dest_tenant:
+        description: 'Destination Tenant'
+        required: true
+        type: choice
+        options:
+          - DEV
+          - STAGE
+          - PROD
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the main branch
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      # Step 2: Set up JDK
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17' # Adjust Java version as required
+          distribution: 'temurin'
+
+      # Step 3: Build JAR using Maven
+      - name: Build JAR
+        run: |
+          mvn clean package
+        env:
+          SOURCE_TENANT: ${{ github.event.inputs.source_tenant }}
+          DEST_TENANT: ${{ github.event.inputs.dest_tenant }}
+
+      # Step 4: Run the built JAR
+      - name: Run JAR
+        run: |
+          java -jar target/*.jar auth0-sync -s ${{ github.event.inputs.source_tenant }} -d ${{ github.event.inputs.dest_tenant }} -c '${{ secrets.AUTH0_CREDENTIALS }}'
