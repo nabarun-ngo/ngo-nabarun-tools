@@ -61,6 +61,7 @@ public class Auth0SyncService {
 				}
 
 				SyncPermissions(sourceRole, targetRole);
+				Thread.sleep(2000);
 			}
 		} catch (Exception e) {
 			System.err.println("Error syncing roles and permissions: " + e.getMessage());
@@ -169,8 +170,9 @@ public class Auth0SyncService {
 						newResourceServer=targetClient.resourceServers().create(newResourceServer).execute();
 						System.out.println("Created new resource server: " + newResourceServer.getName());
 					}
+					Thread.sleep(2000);
 				}
-
+				
 			}
 		} catch (Exception e) {
 			System.err.println("Error syncing resource servers and scopes: " + e.getMessage());
