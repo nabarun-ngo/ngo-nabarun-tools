@@ -23,8 +23,8 @@ public class Auth0SyncService extends Auth0BaseService{
 	private ManagementAPI targetClient;
 
 	public void Initialize(Auth0Config[] config,String source,String dest) throws Auth0Exception {
-		Assert.isNull(source, "Source cannot be null or empty");
-		Assert.isNull(dest, "Dest cannot be null or empty");
+		Assert.notNull(source, "Source cannot be null or empty");
+		Assert.notNull(dest, "Dest cannot be null or empty");
 
 		System.out.println("Source Tenant = "+source);
 		System.out.println("Destination Tenant = "+dest);

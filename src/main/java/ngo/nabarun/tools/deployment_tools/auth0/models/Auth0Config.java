@@ -9,6 +9,5 @@ public class Auth0Config {
 	private String clientId;
 	private String clientSecret;
 	private String audience;
-	private String resourceServer;
 
 }

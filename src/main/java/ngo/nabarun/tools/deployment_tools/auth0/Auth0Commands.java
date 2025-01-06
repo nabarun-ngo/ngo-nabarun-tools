@@ -82,6 +82,7 @@ public class Auth0Commands {
     		@ShellOption({"-i", "--input"}) String input,
     		@ShellOption({"-r", "--rs"}) String rs
     		) throws Exception {
+    	System.out.println(destTenant);
     	System.out.println("-----------------------------");
     	System.out.println("LOGIN - Auth0");
     	System.out.println("-----------------------------");
