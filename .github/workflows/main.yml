@@ -9,4 +9,5 @@ jobs:
     with:
       branch_name: 'main'
       target_folder: 'target'
-      auth0_secrets: '${{ secrets.AUTH0_CREDENTIALS }}'
+    secrets:
+      auth0_secrets: ${{ secrets.AUTH0_CREDENTIALS }}
