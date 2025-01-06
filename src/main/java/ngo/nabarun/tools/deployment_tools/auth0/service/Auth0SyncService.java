@@ -5,38 +5,32 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
-import com.auth0.client.auth.AuthAPI;
 import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.client.mgmt.filter.ResourceServersFilter;
 import com.auth0.client.mgmt.filter.RolesFilter;
 import com.auth0.exception.Auth0Exception;
-import com.auth0.json.auth.TokenHolder;
 import com.auth0.json.mgmt.Permission;
 import com.auth0.json.mgmt.ResourceServer;
 import com.auth0.json.mgmt.Role;
 import ngo.nabarun.tools.deployment_tools.auth0.models.Auth0Config;
 
 @Component
-public class Auth0SyncService {
+public class Auth0SyncService extends Auth0BaseService{
 
 	private ManagementAPI sourceClient;
 	private ManagementAPI targetClient;
 
 	public void Initialize(Auth0Config[] config,String source,String dest) throws Auth0Exception {
+		Assert.isNull(source, "Source cannot be null or empty");
+		Assert.isNull(dest, "Dest cannot be null or empty");
+
 		System.out.println("Source Tenant = "+source);
 		System.out.println("Destination Tenant = "+dest);
-
-		Auth0Config sourceCred=List.of(config).stream().filter(f->f.getTenantName().equalsIgnoreCase(source)).findFirst().orElseThrow();
-		Auth0Config destCred=List.of(config).stream().filter(f->f.getTenantName().equalsIgnoreCase(dest)).findFirst().orElseThrow();
-
-		this.sourceClient = new ManagementAPI(sourceCred.getDomain(), GetToken(sourceCred).getAccessToken());
-		this.targetClient = new ManagementAPI(destCred.getDomain(), GetToken(destCred).getAccessToken());
-	}
-	
-	private TokenHolder GetToken(Auth0Config cred) throws Auth0Exception {
-		AuthAPI authAPI = new AuthAPI(cred.getDomain(), cred.getClientId(), cred.getClientSecret());
-		return authAPI.requestToken(cred.getAudience()).execute();
+		
+		this.sourceClient = InitManagementAPI(config, source);
+		this.targetClient = InitManagementAPI(config, dest);
 	}
 
 	public void SyncRolesAndPermissions() {
