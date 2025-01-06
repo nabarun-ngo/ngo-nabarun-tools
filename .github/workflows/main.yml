@@ -11,3 +11,4 @@ jobs:
       target_folder: 'target'
     secrets:
       auth0_secrets: ${{ secrets.AUTH0_CREDENTIALS }}
+      gcp_service_account: ${{ secrets.NABARUN_FIREBASE_SERVICE_ACCOUNT_STAGE }}
