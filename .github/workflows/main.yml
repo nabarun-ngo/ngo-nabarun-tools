@@ -1,0 +1,8 @@
+name: Import Data to Auth0
+
+on:
+  workflow_dispatch:
+
+jobs:
+  job1:
+    uses: nabarun-ngo/ngo-nabarun-devops/.github/workflows/Auth0-Import.yml@main
