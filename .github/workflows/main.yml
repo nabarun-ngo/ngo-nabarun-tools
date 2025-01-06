@@ -6,3 +6,7 @@ on:
 jobs:
   job1:
     uses: nabarun-ngo/ngo-nabarun-devops/.github/workflows/Auth0-Import.yml@main
+    with:
+      branch_name: 'main'
+      target_folder: 'target'
+    secrets: inherit
