@@ -1,4 +1,4 @@
-name: Import Data to Auth0 from Google Drive
+name: Manually Import Data to Auth0 from Google Drive
 
 on:
   workflow_dispatch:
