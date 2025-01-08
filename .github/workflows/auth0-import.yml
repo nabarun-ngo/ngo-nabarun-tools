@@ -29,7 +29,6 @@ jobs:
       auth0_import_tenant: ${{ github.event.inputs.target_tenant }}
       auth0_resource_server: ${{ vars.auth0_resource_server }}
       input_file: ${{ github.event.inputs.file_name }}
-      dry_run: true
     secrets:
       auth0_secrets: ${{ secrets.AUTH0_CREDENTIALS }}
       gcp_service_account: ${{ secrets.NABARUN_FIREBASE_SERVICE_ACCOUNT_STAGE }}
