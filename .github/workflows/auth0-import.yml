@@ -19,6 +19,7 @@ on:
         default: 'Application_Access_Management_v3.xlsx'
 jobs:
   import_data:
+    name: Import Data
     uses: nabarun-ngo/ngo-nabarun-devops/.github/workflows/Auth0-Import.yml@main
     with:
       branch_name: 'main'
