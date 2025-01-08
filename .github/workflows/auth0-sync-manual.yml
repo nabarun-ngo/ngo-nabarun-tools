@@ -1,4 +1,4 @@
-name: Manually Sync Auth0 Tenants
+name: Manually Sync Data between Auth0 Tenants
 
 on:
   workflow_dispatch:
