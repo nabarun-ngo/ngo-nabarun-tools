@@ -65,8 +65,8 @@ public class Auth0DataService extends Auth0BaseService {
 		rserver.setScopes(scopes);
 		
 		if(!new_scopes.equals(old_scopes)) {
-			client.resourceServers().update(resourceServer.getId(), rserver);
-			System.out.println("Scope updated to Resource server "+new_scopes);
+			List<String> updated_scopes=client.resourceServers().update(resourceServer.getId(), rserver).execute().getScopes().stream().map(m->m.getValue()).toList();
+			System.out.println("Scope updated to Resource server "+updated_scopes);
 		}else {
 			System.out.println("No Scope updated to Resource server");
 		}
@@ -93,7 +93,7 @@ public class Auth0DataService extends Auth0BaseService {
 			}).toList();
 
 			if (!permissionToAdd.isEmpty()) {
-				client.roles().addPermissions(role.getId(), permissionToAdd);
+				client.roles().addPermissions(role.getId(), permissionToAdd).execute();
 				System.out.println("Permissions added to '"+role.getName()+"' Role.");
 			}else {
 				System.out.println("No Permissions to add for '"+role.getName()+"' Role.");
@@ -108,7 +108,7 @@ public class Auth0DataService extends Auth0BaseService {
 			}).toList();
 
 			if (!permissionToRemove.isEmpty()) {
-				client.roles().removePermissions(role.getId(), permissionToRemove);
+				client.roles().removePermissions(role.getId(), permissionToRemove).execute();
 				System.out.println("Permissions removed from "+role.getName()+" Role.");
 			}else {
 				System.out.println("No Permissions to remove from '"+role.getName()+"' Role.");
