@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -66,24 +65,50 @@ public class ExcelUtil {
 	 * @return sheetData in form of List<List<String>>
 	 */
 	private static List<List<String>> getSheetData(Sheet sheet) {
-		List<List<String>> data = new ArrayList<>();
-		Iterator<Row> rowIterator = sheet.iterator();
-		while (rowIterator.hasNext()) {
-			List<String> rowData = new ArrayList<>();
-			Row row = rowIterator.next();
-			Iterator<Cell> cellIterator = row.cellIterator();
+        List<List<String>> data = new ArrayList<>();
+        for (Row row : sheet) {
+            List<String> rowData = new ArrayList<>();
+            for (Cell cell : row) {
+                String value = getCellValue(cell);
+                if (!StringUtils.isEmpty(value)) {
+                    rowData.add(value.trim());
+                }
+            }
+            data.add(rowData);
+        }
+        return data;
+    }
 
-			while (cellIterator.hasNext()) {
-				Cell cell = cellIterator.next();
-				String value = fmt.formatCellValue(cell);
-				if (!StringUtils.isEmpty(value)) {
-					rowData.add(value.toString().trim());
-				}
-			}
-			data.add(rowData);
-		}
-		return data;
-	}
+    private static String getCellValue(Cell cell) {
+        if (cell == null) return "";
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return fmt.formatCellValue(cell);
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return getCachedFormulaValue(cell);
+            case BLANK:
+                return "";
+            default:
+                return "Unsupported Cell Type";
+        }
+    }
+
+    private static String getCachedFormulaValue(Cell cell) {
+        switch (cell.getCachedFormulaResultType()) {
+            case STRING:
+                return cell.getRichStringCellValue().getString();
+            case NUMERIC:
+                return fmt.formatCellValue(cell);
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return "Formula Not Supported: " + cell.getCellFormula();
+        }
+    }
 	public static void createExcelWorkBook(File source, Map<String, List<List<String>>> data, boolean hasHeader) throws Exception {
 		createExcelWorkBook(source,data,hasHeader,null,null);
 	}

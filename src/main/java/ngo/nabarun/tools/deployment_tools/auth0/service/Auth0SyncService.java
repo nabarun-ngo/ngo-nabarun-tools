@@ -1,6 +1,7 @@
 package ngo.nabarun.tools.deployment_tools.auth0.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -10,27 +11,33 @@ import org.springframework.util.Assert;
 import com.auth0.client.mgmt.ManagementAPI;
 import com.auth0.client.mgmt.filter.ResourceServersFilter;
 import com.auth0.client.mgmt.filter.RolesFilter;
-import com.auth0.exception.Auth0Exception;
 import com.auth0.json.mgmt.Permission;
 import com.auth0.json.mgmt.ResourceServer;
 import com.auth0.json.mgmt.Role;
-import ngo.nabarun.tools.deployment_tools.auth0.models.Auth0Config;
+
+import ngo.nabarun.tools.config.DopplerProject;
+import ngo.nabarun.tools.config.DopplerPropertySource;
 
 @Component
 public class Auth0SyncService extends Auth0BaseService{
 
 	private ManagementAPI sourceClient;
 	private ManagementAPI targetClient;
+	private Map<String, Object> sourceConfig;
+	private Map<String, Object> destConfig;
 
-	public void Initialize(Auth0Config[] config,String source,String dest) throws Auth0Exception {
+	public void Initialize(DopplerProject project,String source,String dest) throws Exception {
 		Assert.notNull(source, "Source cannot be null or empty");
 		Assert.notNull(dest, "Dest cannot be null or empty");
 
 		System.out.println("Source Tenant = "+source);
 		System.out.println("Destination Tenant = "+dest);
 		
-		this.sourceClient = InitManagementAPI(config, source);
-		this.targetClient = InitManagementAPI(config, dest);
+		this.sourceConfig = new DopplerPropertySource(project, source).loadProperties();
+		this.destConfig = new DopplerPropertySource(project, dest).loadProperties();
+		
+		this.sourceClient = InitManagementAPI(sourceConfig);
+		this.targetClient = InitManagementAPI(destConfig);
 	}
 
 	public void SyncRolesAndPermissions() {
@@ -56,6 +63,7 @@ public class Auth0SyncService extends Auth0BaseService{
 
 				SyncPermissions(sourceRole, targetRole);
 				Thread.sleep(2000);
+				System.out.println();
 			}
 		} catch (Exception e) {
 			System.err.println("Error syncing roles and permissions: " + e.getMessage());
@@ -165,6 +173,7 @@ public class Auth0SyncService extends Auth0BaseService{
 						System.out.println("Created new resource server: " + newResourceServer.getName());
 					}
 					Thread.sleep(2000);
+					System.out.println();
 				}
 				
 			}

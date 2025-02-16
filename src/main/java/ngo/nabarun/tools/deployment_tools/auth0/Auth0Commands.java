@@ -9,11 +9,9 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
 import com.auth0.exception.Auth0Exception;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ngo.nabarun.tools.deployment_tools.auth0.models.Auth0Config;
+import ngo.nabarun.tools.config.DopplerProject;
 import ngo.nabarun.tools.deployment_tools.auth0.service.Auth0DataService;
 import ngo.nabarun.tools.deployment_tools.auth0.service.Auth0SyncService;
 
@@ -27,13 +25,13 @@ public class Auth0Commands {
 	@Autowired
 	private Auth0DataService DataService;
 	
-    @ShellMethod(key = {"auth0-sync"})
+    @ShellMethod(key = {"auth0-sync-tenants"},value = "Sync Resource servers, Roles and permissions between auth0 tenants")
     public void SyncAuth0Tenants(
     		@ShellOption({"-c", "--config"}) String config, 
     		@ShellOption({"-s", "--source"}) String sourceTenant,
     		@ShellOption({"-d", "--dest"}) String destTenant
 
-    		) throws Auth0Exception, JsonMappingException, JsonProcessingException {
+    		) throws Exception {
     	System.out.println("-----------------------------");
     	System.out.println("LOGIN - Auth0");
     	System.out.println("-----------------------------");
@@ -48,19 +46,19 @@ public class Auth0Commands {
     	SyncService.SyncRolesAndPermissions();
     }
     
-    @ShellMethod(key = {"auth0-login"})
+    @ShellMethod(key = {"auth0-login"},value = "Login to auth0 server tenants")
     public void Auth0Login(
     		@ShellOption({"-c", "--config"}) String config, 
     		@ShellOption(value={"-s", "--source"},defaultValue = "__NONE__") String sourceTenant,
     		@ShellOption(value={"-d", "--dest"}) String destTenant
 
-    		) throws Auth0Exception, JsonMappingException, JsonProcessingException {
+    		) throws Exception {
     	ObjectMapper objectMapper= new ObjectMapper();
-    	Auth0Config[] configList =objectMapper.readValue(config,Auth0Config[].class);
+    	DopplerProject project =objectMapper.readValue(config,DopplerProject.class);
     	if(sourceTenant == null || sourceTenant.equals("__NONE__")) {
-        	DataService.Initialize(configList, destTenant);
+        	DataService.Initialize(project, destTenant);
     	}else {
-        	SyncService.Initialize(configList, sourceTenant, destTenant);
+        	SyncService.Initialize(project, sourceTenant, destTenant);
     	}
     }
     
@@ -74,7 +72,28 @@ public class Auth0Commands {
     	SyncService.SyncResourceServersAndScopes();
     }
     
-    @ShellMethod(key = {"auth0-import-data"})
+    @ShellMethod(key = {"auth0-import-users"},value = "Import Test users to tenant")
+    public void Auth0InportUsers(
+
+    		@ShellOption({"-c", "--config"}) String config, 
+    		@ShellOption(value={"-d", "--dest"}) String destTenant,
+    		@ShellOption({"-i", "--input"}) String input,
+    		@ShellOption({"-r", "--removeFirst"}) boolean removeFirst
+    		) throws Exception {
+    	System.out.println(destTenant);
+    	System.out.println("-----------------------------");
+    	System.out.println("LOGIN - Auth0");
+    	System.out.println("-----------------------------");
+    	Auth0Login(config,null,destTenant);
+    	System.out.println("-----------------------------");
+    	System.out.println("IMPORT - Users and Roles to "+destTenant+" tenant.");
+    	System.out.println("-----------------------------");
+    	DataService.ImportUsersAndRoles(new File(input),removeFirst);
+    	System.out.println("-----------------------------");
+    	
+    }
+    
+    @ShellMethod(key = {"auth0-import-data"},value = "Import permisssions to Resource servers, Import permissions to Roles from excel.")
     public void Auth0InportData(
 
     		@ShellOption({"-c", "--config"}) String config, 
