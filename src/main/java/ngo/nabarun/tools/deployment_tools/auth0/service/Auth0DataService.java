@@ -18,7 +18,7 @@ import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.Scope;
 import com.auth0.json.mgmt.users.User;
 
-import ngo.nabarun.tools.config.DopplerProject;
+import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.config.DopplerPropertySource;
 import ngo.nabarun.tools.util.ExcelUtil;
 
@@ -28,13 +28,16 @@ public class Auth0DataService extends Auth0BaseService {
 	private ManagementAPI client;
 	private Map<String, Object> config;
 
-	public void Initialize(DopplerProject project, String destTenant) throws Exception {
-		Assert.notNull(destTenant, "Dest cannot be null or empty");
-		this.config = new DopplerPropertySource(project, destTenant).loadProperties();
+	public void Initialize(String project, Map<String,String> target) throws Exception {
+		Assert.notNull(target, "Dest cannot be null or empty");
+		String targetTenant=target.get(Constants.doppler_env_name);
+		String targetToken=target.get(Constants.doppler_env_token);
+		this.config = new DopplerPropertySource(project, targetTenant,targetToken).loadProperties();
 		this.client = InitManagementAPI(config);
 	}
 
-	public void ImportPermissionsToResourceServer(File inputFile, String identifier) throws Exception {
+	public void ImportPermissionsToResourceServer(File inputFile) throws Exception {
+		String identifier = config.get(Constants.AUTH0_RESOURCE_API_AUDIENCE).toString();
 		List<List<String>> sheetdata = ExcelUtil.readExcelWorkBook(inputFile).get("Auth0_Role_Permission_Mapping");
 		ResourceServer resourceServer = client.resourceServers().get(identifier).execute();
 		ResourceServer rserver = new ResourceServer();
@@ -63,9 +66,10 @@ public class Auth0DataService extends Auth0BaseService {
 
 	}
 
-	public void AlocatePermissionsToRole(File inputFile, String identifier) throws Exception {
+	public void AlocatePermissionsToRole(File inputFile) throws Exception {
 		List<Role> roleList = client.roles().list(null).execute().getItems();
 		List<List<String>> mappingSheet = ExcelUtil.readExcelWorkBook(inputFile).get("Auth0_Role_Permission_Mapping");
+		String identifier = config.get(Constants.AUTH0_RESOURCE_API_AUDIENCE).toString();
 
 		for (Role role : roleList) {
 

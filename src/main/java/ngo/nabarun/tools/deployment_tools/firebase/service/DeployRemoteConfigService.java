@@ -13,7 +13,6 @@ import com.google.firebase.remoteconfig.Parameter;
 import com.google.firebase.remoteconfig.Template;
 
 import ngo.nabarun.tools.config.Constants;
-import ngo.nabarun.tools.config.DopplerProject;
 import ngo.nabarun.tools.config.DopplerPropertySource;
 
 
@@ -24,27 +23,32 @@ public class DeployRemoteConfigService {
 	private FirebaseApp sourceApp;
 	private FirebaseApp destApp;
 
-	public DeployRemoteConfigService(DopplerProject config,String source,String dest) throws Exception {
+	public DeployRemoteConfigService(String project,Map<String,String> source,Map<String,String> dest) throws Exception {
 		Assert.notNull(source, "Source cannot be null or empty");
 		Assert.notNull(dest, "Dest cannot be null or empty");
-
-		System.out.println("Source = "+source);
-		System.out.println("Destination = "+dest);
+		String sourceTenant=source.get(Constants.doppler_env_name);
+		String sourceToken=source.get(Constants.doppler_env_token);
 		
-		this.sourceConfig = new DopplerPropertySource(config, source).loadProperties();
-		this.destConfig = new DopplerPropertySource(config, dest).loadProperties();
+		String destTenant=dest.get(Constants.doppler_env_name);
+		String destToken=dest.get(Constants.doppler_env_token);
+		
+		System.out.println("Source Tenant = "+sourceTenant);
+		System.out.println("Destination Tenant = "+destTenant);
+		
+		this.sourceConfig = new DopplerPropertySource(project, sourceTenant,sourceToken).loadProperties();
+		this.destConfig = new DopplerPropertySource(project, destTenant,destToken).loadProperties();
 		
 		String sourceCred= String.valueOf(sourceConfig.get(Constants.FIREBASE_CREDENTIAL));		
 		FirebaseOptions sourceOptions = FirebaseOptions.builder()
 				.setCredentials(GoogleCredentials.fromStream(new ByteArrayInputStream(sourceCred.getBytes())))
 				.build();
-		sourceApp=FirebaseApp.initializeApp(sourceOptions,source);
+		sourceApp=FirebaseApp.initializeApp(sourceOptions,sourceTenant);
         
 		String destCred= String.valueOf(destConfig.get(Constants.FIREBASE_CREDENTIAL));
 		FirebaseOptions destOptions = FirebaseOptions.builder()
 				.setCredentials(GoogleCredentials.fromStream(new ByteArrayInputStream(destCred.getBytes())))
 				.build();
-		destApp=FirebaseApp.initializeApp(destOptions,dest);
+		destApp=FirebaseApp.initializeApp(destOptions,destTenant);
 
 	}
 	

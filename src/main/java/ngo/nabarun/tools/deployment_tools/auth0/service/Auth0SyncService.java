@@ -15,7 +15,7 @@ import com.auth0.json.mgmt.Permission;
 import com.auth0.json.mgmt.ResourceServer;
 import com.auth0.json.mgmt.Role;
 
-import ngo.nabarun.tools.config.DopplerProject;
+import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.config.DopplerPropertySource;
 
 @Component
@@ -26,15 +26,20 @@ public class Auth0SyncService extends Auth0BaseService{
 	private Map<String, Object> sourceConfig;
 	private Map<String, Object> destConfig;
 
-	public void Initialize(DopplerProject project,String source,String dest) throws Exception {
+	public void Initialize(String project,Map<String,String> source,Map<String,String> dest) throws Exception {
 		Assert.notNull(source, "Source cannot be null or empty");
 		Assert.notNull(dest, "Dest cannot be null or empty");
-
-		System.out.println("Source Tenant = "+source);
-		System.out.println("Destination Tenant = "+dest);
+		String sourceTenant=source.get(Constants.doppler_env_name);
+		String sourceToken=source.get(Constants.doppler_env_token);
 		
-		this.sourceConfig = new DopplerPropertySource(project, source).loadProperties();
-		this.destConfig = new DopplerPropertySource(project, dest).loadProperties();
+		String destTenant=dest.get(Constants.doppler_env_name);
+		String destToken=dest.get(Constants.doppler_env_token);
+		
+		System.out.println("Source Tenant = "+sourceTenant);
+		System.out.println("Destination Tenant = "+destTenant);
+		
+		this.sourceConfig = new DopplerPropertySource(project, sourceTenant,sourceToken).loadProperties();
+		this.destConfig = new DopplerPropertySource(project, destTenant,destToken).loadProperties();
 		
 		this.sourceClient = InitManagementAPI(sourceConfig);
 		this.targetClient = InitManagementAPI(destConfig);

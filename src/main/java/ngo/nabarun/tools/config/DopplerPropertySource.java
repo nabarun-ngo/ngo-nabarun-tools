@@ -16,8 +16,6 @@ import org.apache.http.util.EntityUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ngo.nabarun.tools.config.DopplerProject.Environment;
-
 
 public class DopplerPropertySource {
 
@@ -31,12 +29,12 @@ public class DopplerPropertySource {
 		this.serviceToken = serviceToken;
 	}
 	
-	public DopplerPropertySource(DopplerProject project, String environment) {
-		this.projectName=project.getProjectName();
-		Environment env=project.getEnvironments().stream().filter(f-> environment.equalsIgnoreCase(f.getEnvName())).findFirst().get();
-		this.configName=env.getEnvName();
-		this.serviceToken=env.getToken();
-	}
+//	public DopplerPropertySource(DopplerProject project, String environment) {
+//		this.projectName=project.getProjectName();
+//		Environment env=project.getEnvironments().stream().filter(f-> environment.equalsIgnoreCase(f.getEnvName())).findFirst().get();
+//		this.configName=env.getEnvName();
+//		this.serviceToken=env.getToken();
+//	}
 
 	public Map<String, Object> loadProperties() throws Exception {
 		Map<String, Object> propertySource = new HashMap<>();
@@ -70,7 +68,7 @@ public class DopplerPropertySource {
 			while (fields.hasNext()) {
 				Map.Entry<String, JsonNode> field = fields.next();
 				String key = field.getKey();
-				String rawValue = field.getValue().get("raw").asText();
+				String rawValue = field.getValue().get("computed").asText();
 				//String rawVisibility = field.getValue().get("rawVisibility").asText();
 				propertySource.put(key, rawValue);
 				//System.out.println(key + " : " + (rawVisibility.equals("restricted") ? "***" : rawValue));

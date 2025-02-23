@@ -1,6 +1,7 @@
 package ngo.nabarun.tools.deployment_tools.auth0;
 
 import java.io.File;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
@@ -8,10 +9,7 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
-import com.auth0.exception.Auth0Exception;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ngo.nabarun.tools.config.DopplerProject;
+import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.deployment_tools.auth0.service.Auth0DataService;
 import ngo.nabarun.tools.deployment_tools.auth0.service.Auth0SyncService;
 
@@ -27,15 +25,20 @@ public class Auth0Commands {
 	
     @ShellMethod(key = {"auth0-sync-tenants"},value = "Sync Resource servers, Roles and permissions between auth0 tenants")
     public void SyncAuth0Tenants(
-    		@ShellOption({"-c", "--config"}) String config, 
     		@ShellOption({"-s", "--source"}) String sourceTenant,
-    		@ShellOption({"-d", "--dest"}) String destTenant
-
+    		@ShellOption({"-d", "--dest"}) String destTenant,
+    		@ShellOption({"-p", "--project"}) String project,
+    		@ShellOption({"-st", "--sourceToken"}) String sourceToken, 
+    		@ShellOption({"-dt", "--destToken"}) String destToken
     		) throws Exception {
     	System.out.println("-----------------------------");
     	System.out.println("LOGIN - Auth0");
     	System.out.println("-----------------------------");
-    	Auth0Login(config,sourceTenant,destTenant);
+    	
+    	Map<String, String> source = Map.of(Constants.doppler_env_name,sourceTenant,Constants.doppler_env_token,sourceToken);
+    	Map<String, String> dest = Map.of(Constants.doppler_env_name,destTenant,Constants.doppler_env_token,destToken);
+    	SyncService.Initialize(project, source, dest);
+    	
     	System.out.println("-----------------------------");
     	System.out.println("SYNC - RESOURCE SERVER");
     	System.out.println("-----------------------------");
@@ -46,37 +49,12 @@ public class Auth0Commands {
     	SyncService.SyncRolesAndPermissions();
     }
     
-    @ShellMethod(key = {"auth0-login"},value = "Login to auth0 server tenants")
-    public void Auth0Login(
-    		@ShellOption({"-c", "--config"}) String config, 
-    		@ShellOption(value={"-s", "--source"},defaultValue = "__NONE__") String sourceTenant,
-    		@ShellOption(value={"-d", "--dest"}) String destTenant
-
-    		) throws Exception {
-    	ObjectMapper objectMapper= new ObjectMapper();
-    	DopplerProject project =objectMapper.readValue(config,DopplerProject.class);
-    	if(sourceTenant == null || sourceTenant.equals("__NONE__")) {
-        	DataService.Initialize(project, destTenant);
-    	}else {
-        	SyncService.Initialize(project, sourceTenant, destTenant);
-    	}
-    }
-    
-    @ShellMethod(key = {"auth0-sync-roles"})
-    public void Auth0SyncRolesAndPermissions() throws Auth0Exception {
-    	SyncService.SyncRolesAndPermissions();
-    }
-    
-    @ShellMethod(key = {"auth0-sync-resource-servers"})
-    public void Auth0SyncResourceServers() throws Auth0Exception {
-    	SyncService.SyncResourceServersAndScopes();
-    }
     
     @ShellMethod(key = {"auth0-import-users"},value = "Import Test users to tenant")
     public void Auth0InportUsers(
-
-    		@ShellOption({"-c", "--config"}) String config, 
     		@ShellOption(value={"-d", "--dest"}) String destTenant,
+    		@ShellOption({"-p", "--project"}) String project,
+    		@ShellOption({"-dt", "--destToken"}) String destToken,
     		@ShellOption({"-i", "--input"}) String input,
     		@ShellOption({"-r", "--removeFirst"}) boolean removeFirst
     		) throws Exception {
@@ -84,7 +62,10 @@ public class Auth0Commands {
     	System.out.println("-----------------------------");
     	System.out.println("LOGIN - Auth0");
     	System.out.println("-----------------------------");
-    	Auth0Login(config,null,destTenant);
+    	
+    	Map<String, String> dest = Map.of(Constants.doppler_env_name,destTenant,Constants.doppler_env_token,destToken);
+    	DataService.Initialize(project, dest);
+
     	System.out.println("-----------------------------");
     	System.out.println("IMPORT - Users and Roles to "+destTenant+" tenant.");
     	System.out.println("-----------------------------");
@@ -95,25 +76,25 @@ public class Auth0Commands {
     
     @ShellMethod(key = {"auth0-import-data"},value = "Import permisssions to Resource servers, Import permissions to Roles from excel.")
     public void Auth0InportData(
-
-    		@ShellOption({"-c", "--config"}) String config, 
     		@ShellOption(value={"-d", "--dest"}) String destTenant,
-    		@ShellOption({"-i", "--input"}) String input,
-    		@ShellOption({"-r", "--rs"}) String rs
+    		@ShellOption({"-p", "--project"}) String project,
+    		@ShellOption({"-dt", "--destToken"}) String destToken,
+    		@ShellOption({"-i", "--input"}) String input
     		) throws Exception {
     	System.out.println(destTenant);
     	System.out.println("-----------------------------");
     	System.out.println("LOGIN - Auth0");
     	System.out.println("-----------------------------");
-    	Auth0Login(config,null,destTenant);
+    	Map<String, String> dest = Map.of(Constants.doppler_env_name,destTenant,Constants.doppler_env_token,destToken);
+    	DataService.Initialize(project, dest);
     	System.out.println("-----------------------------");
     	System.out.println("IMPORT - RESOURCE SERVER SCOPE");
     	System.out.println("-----------------------------");
-    	DataService.ImportPermissionsToResourceServer(new File(input),rs);
+    	DataService.ImportPermissionsToResourceServer(new File(input));
     	System.out.println("-----------------------------");
     	System.out.println("IMPORT - PERMISSION & ROLE");
     	System.out.println("-----------------------------");
-    	DataService.AlocatePermissionsToRole(new File(input),rs);
+    	DataService.AlocatePermissionsToRole(new File(input));
 
     }
     
