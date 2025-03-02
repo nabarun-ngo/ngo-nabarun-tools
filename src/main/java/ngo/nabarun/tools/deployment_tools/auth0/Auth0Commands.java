@@ -72,6 +72,12 @@ public class Auth0Commands {
     	DataService.ImportUsersAndRoles(new File(input),removeFirst);
     	System.out.println("-----------------------------");
     	
+    	System.out.println("-----------------------------");
+    	System.out.println("SYNC - Syncing Users and Roles with APP.");
+    	System.out.println("-----------------------------");
+    	DataService.SyncUserDetailBetweenAuth0AndApp();
+    	System.out.println("-----------------------------");
+    	
     }
     
     @ShellMethod(key = {"auth0-import-data"},value = "Import permisssions to Resource servers, Import permissions to Roles from excel.")
