@@ -18,11 +18,13 @@ import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.Scope;
 import com.auth0.json.mgmt.users.User;
 
+import lombok.extern.slf4j.Slf4j;
 import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.config.DopplerPropertySource;
 import ngo.nabarun.tools.util.ExcelUtil;
 
 @Component
+@Slf4j
 public class Auth0DataService extends Auth0BaseService {
 
 	private ManagementAPI client;
@@ -113,7 +115,8 @@ public class Auth0DataService extends Auth0BaseService {
 				Thread.sleep(3000);
 
 			} catch (Exception e) {
-				System.out.println("Exception occured. " + e.getMessage());
+				System.out.println("Exception occured while adding permission to role "+role.getName()+". Message: " + e.getMessage());
+				e.printStackTrace();
 			}
 		}
 
@@ -123,7 +126,7 @@ public class Auth0DataService extends Auth0BaseService {
 		List<String> permissions = new ArrayList<>();
 		int index = getRoleIndex(sheetdata.get(0), name);
 		for (List<String> data : sheetdata) {
-			if (data.size() >= index && data.get(index).equals("Y")) {
+			if (data.size() > index && data.get(index).equals("Y")) {
 				permissions.add(data.get(0));
 			}
 		}
@@ -166,7 +169,7 @@ public class Auth0DataService extends Auth0BaseService {
 					System.out.println("Successfully deleted user " + user.getName() + ". UserId is " + user.getId());
 					Thread.sleep(2000);
 				} catch (Exception e) {
-					System.out.println("Failed to delete user " + user.getName() + ". UserId is " + user.getId());
+					System.out.println("Failed to delete user " + user.getName() + ". UserId is " + user.getId()+" Message: "+e.getMessage());
 				}
 
 			}
@@ -201,7 +204,7 @@ public class Auth0DataService extends Auth0BaseService {
 					Thread.sleep(2000);
 					userCreated = true;
 				} catch (Exception e) {
-					System.out.println("Failed create user " + user.getName());
+					System.out.println("Failed create user " + user.getName()+" Message: "+e.getMessage());
 				}
 
 				if (userCreated) {
@@ -213,7 +216,7 @@ public class Auth0DataService extends Auth0BaseService {
 							System.out.println("Successfully added role " + role + " to user " + user.getName()
 									+ ". UserId is " + user.getId());
 						} catch (Exception e) {
-							System.out.println("Failed add role " + role + " to user " + user.getName());
+							System.out.println("Failed add role " + role + " to user " + user.getName()+" Message: "+e.getMessage());
 						}
 					}
 				}
