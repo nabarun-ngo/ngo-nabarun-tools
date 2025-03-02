@@ -183,8 +183,8 @@ public class Auth0DataService extends Auth0BaseService {
 			String firstName = userInfo.get(0);
 			String lastName = userInfo.get(1);
 			String email = userInfo.get(2);
-			String password = userInfo.get(3);
-			String[] roles = userInfo.get(4).split(",");
+			String password = userInfo.get(4);
+			String[] roles = userInfo.get(3).split(",");
 			Optional<User> existingUser = userList.stream().filter(f -> f.getEmail().equals(email)).findFirst();
 
 			if (!existingUser.isPresent()) {
