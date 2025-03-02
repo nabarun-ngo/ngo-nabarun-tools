@@ -10,6 +10,8 @@ public class Constants {
 	public static final String AUTH0_RESOURCE_API_AUDIENCE = "AUTH0_RESOURCE_API_AUDIENCE";
 	public static final String doppler_env_name = "doppler_env_name";
 	public static final String doppler_env_token = "doppler_env_token";
+	public static final String APP_URL = "APP_URL";
+	public static final String APP_ACCESS_TOKEN = "APP_ACCESS_TOKEN";
 
 	
 }

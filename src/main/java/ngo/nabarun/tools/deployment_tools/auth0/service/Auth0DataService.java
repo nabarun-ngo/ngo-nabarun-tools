@@ -5,8 +5,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -18,23 +26,21 @@ import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.Scope;
 import com.auth0.json.mgmt.users.User;
 
-import lombok.extern.slf4j.Slf4j;
 import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.config.DopplerPropertySource;
 import ngo.nabarun.tools.util.ExcelUtil;
 
 @Component
-@Slf4j
 public class Auth0DataService extends Auth0BaseService {
 
 	private ManagementAPI client;
 	private Map<String, Object> config;
 
-	public void Initialize(String project, Map<String,String> target) throws Exception {
+	public void Initialize(String project, Map<String, String> target) throws Exception {
 		Assert.notNull(target, "Dest cannot be null or empty");
-		String targetTenant=target.get(Constants.doppler_env_name);
-		String targetToken=target.get(Constants.doppler_env_token);
-		this.config = new DopplerPropertySource(project, targetTenant,targetToken).loadProperties();
+		String targetTenant = target.get(Constants.doppler_env_name);
+		String targetToken = target.get(Constants.doppler_env_token);
+		this.config = new DopplerPropertySource(project, targetTenant, targetToken).loadProperties();
 		this.client = InitManagementAPI(config);
 	}
 
@@ -93,6 +99,8 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().addPermissions(role.getId(), permissionToAdd).execute();
 					System.out.println("Permissions added to '" + role.getName() + "' Role.");
 				} else {
+					System.out.println("Old Permissions : "+String.join(",", oldPermissions));
+					System.out.println("New Permissions : "+String.join(",", newPermissions));
 					System.out.println("No Permissions to add for '" + role.getName() + "' Role.");
 				}
 
@@ -109,13 +117,16 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().removePermissions(role.getId(), permissionToRemove).execute();
 					System.out.println("Permissions removed from " + role.getName() + " Role.");
 				} else {
+					System.out.println("Old Permissions : "+String.join(",", oldPermissions));
+					System.out.println("New Permissions : "+String.join(",", newPermissions));
 					System.out.println("No Permissions to remove from '" + role.getName() + "' Role.");
 				}
 				System.out.println("--------------------------------------------------");
 				Thread.sleep(3000);
 
 			} catch (Exception e) {
-				System.out.println("Exception occured while adding permission to role "+role.getName()+". Message: " + e.getMessage());
+				System.out.println("Exception occured while adding permission to role " + role.getName() + ". Message: "
+						+ e.getMessage());
 				e.printStackTrace();
 			}
 		}
@@ -169,7 +180,8 @@ public class Auth0DataService extends Auth0BaseService {
 					System.out.println("Successfully deleted user " + user.getName() + ". UserId is " + user.getId());
 					Thread.sleep(2000);
 				} catch (Exception e) {
-					System.out.println("Failed to delete user " + user.getName() + ". UserId is " + user.getId()+" Message: "+e.getMessage());
+					System.out.println("Failed to delete user " + user.getName() + ". UserId is " + user.getId()
+							+ " Message: " + e.getMessage());
 				}
 
 			}
@@ -204,7 +216,7 @@ public class Auth0DataService extends Auth0BaseService {
 					Thread.sleep(2000);
 					userCreated = true;
 				} catch (Exception e) {
-					System.out.println("Failed create user " + user.getName()+" Message: "+e.getMessage());
+					System.out.println("Failed create user " + user.getName() + " Message: " + e.getMessage());
 				}
 
 				if (userCreated) {
@@ -216,16 +228,54 @@ public class Auth0DataService extends Auth0BaseService {
 							System.out.println("Successfully added role " + role + " to user " + user.getName()
 									+ ". UserId is " + user.getId());
 						} catch (Exception e) {
-							System.out.println("Failed add role " + role + " to user " + user.getName()+" Message: "+e.getMessage());
+							System.out.println("Failed add role " + role + " to user " + user.getName() + " Message: "
+									+ e.getMessage());
 						}
 					}
 				}
 				System.out.println("-----------------------------");
-			}else {
-				System.out.println("User already exists with email "+email);
+			} else {
+				System.out.println("User already exists with email " + email);
 			}
 		}
 		System.out.println("-----------------------------");
+	}
+
+	public void SyncUserDetailBetweenAuth0AndApp() {
+		Object APP_URL = config.get(Constants.APP_URL);
+		if(APP_URL == null) {
+			System.out.println("[ERROR] APP_URL is found null. Please manually Sync users in DB.");
+			return;
+		}
+
+		String baseApiUrl = APP_URL.toString();
+		String apiKey = config.get(Constants.APP_ACCESS_TOKEN).toString(); 
+
+		HttpClient httpClient = HttpClientBuilder.create().build();
+
+		try {
+			HttpPost httpPost = new HttpPost(baseApiUrl+"/api/admin/service/run");
+
+			httpPost.setHeader("Accept", "application/json");
+			httpPost.setHeader("X-Api-Key", apiKey);
+			httpPost.setHeader("Content-Type", "application/json");
+			httpPost.setHeader("Correlation-Id", UUID.randomUUID().toString());
+
+			String jsonBody = "{ \"name\": \"SYNC_USERS\", \"parameters\": { \"sync_role\": \"Y\" } }";
+			httpPost.setEntity(new StringEntity(jsonBody));
+
+			HttpResponse response = httpClient.execute(httpPost);
+			HttpEntity responseEntity = response.getEntity();
+
+			if (responseEntity != null) {
+				String responseBody = EntityUtils.toString(responseEntity);
+				System.out.println("Response Code: " + response.getStatusLine().getStatusCode());
+				System.out.println("Response Body: " + responseBody);
+			}
+
+		} catch (Exception e) {
+			System.out.println("Exception occured while Syncing user : "+e.getMessage());
+		}
 	}
 
 }
