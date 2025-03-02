@@ -99,6 +99,8 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().addPermissions(role.getId(), permissionToAdd).execute();
 					System.out.println("Permissions added to '" + role.getName() + "' Role.");
 				} else {
+					System.out.println("Old Permissions : "+String.join(",", oldPermissions));
+					System.out.println("New Permissions : "+String.join(",", newPermissions));
 					System.out.println("No Permissions to add for '" + role.getName() + "' Role.");
 				}
 
@@ -115,6 +117,8 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().removePermissions(role.getId(), permissionToRemove).execute();
 					System.out.println("Permissions removed from " + role.getName() + " Role.");
 				} else {
+					System.out.println("Old Permissions : "+String.join(",", oldPermissions));
+					System.out.println("New Permissions : "+String.join(",", newPermissions));
 					System.out.println("No Permissions to remove from '" + role.getName() + "' Role.");
 				}
 				System.out.println("--------------------------------------------------");
