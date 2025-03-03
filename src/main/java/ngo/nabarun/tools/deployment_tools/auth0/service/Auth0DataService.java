@@ -60,7 +60,7 @@ public class Auth0DataService extends Auth0BaseService {
 			Scope scope = new Scope(entry.getKey());
 			scope.setDescription(entry.getValue());
 			scopes.add(scope);
-			new_scopes.add(scope.getValue());
+			new_scopes.add(entry.getKey());
 		}
 
 		rserver.setScopes(scopes);
