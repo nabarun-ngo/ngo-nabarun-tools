@@ -15,6 +15,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -36,6 +37,9 @@ public class Auth0DataService extends Auth0BaseService {
 
 	private ManagementAPI client;
 	private Map<String, Object> config;
+	
+	@Value("${console.log.level}")
+	private String consoleLog;
 
 	public void Initialize(String project, Map<String, String> target) throws Exception {
 		Assert.notNull(target, "Dest cannot be null or empty");
@@ -100,8 +104,10 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().addPermissions(role.getId(), permissionToAdd).execute();
 					System.out.println("Permissions added to '" + role.getName() + "' Role.");
 				} else {
-					System.out.println("Old Permissions : [" + String.join(",", oldPermissions) + "]");
-					System.out.println("New Permissions : [" + String.join(",", newPermissions) + "]");
+					if(consoleLog.equalsIgnoreCase("DEBUG")) {
+						System.out.println("Old Permissions : [" + String.join(",", oldPermissions) + "]");
+						System.out.println("New Permissions : [" + String.join(",", newPermissions) + "]");
+					}
 					System.out.println("No Permissions to add for '" + role.getName() + "' Role.");
 				}
 
@@ -118,8 +124,10 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().removePermissions(role.getId(), permissionToRemove).execute();
 					System.out.println("Permissions removed from " + role.getName() + " Role.");
 				} else {
-					System.out.println("Old Permissions : [" + String.join(",", oldPermissions) + "]");
-					System.out.println("New Permissions : [" + String.join(",", newPermissions) + "]");
+					if(consoleLog.equalsIgnoreCase("DEBUG")) {
+						System.out.println("Old Permissions : [" + String.join(",", oldPermissions) + "]");
+						System.out.println("New Permissions : [" + String.join(",", newPermissions) + "]");
+					}
 					System.out.println("No Permissions to remove from '" + role.getName() + "' Role.");
 				}
 				System.out.println("--------------------------------------------------");
