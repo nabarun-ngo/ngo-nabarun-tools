@@ -28,6 +28,7 @@ import com.auth0.json.mgmt.users.User;
 
 import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.config.DopplerPropertySource;
+import ngo.nabarun.tools.helper.RolePermissionExtractor;
 import ngo.nabarun.tools.util.ExcelUtil;
 
 @Component
@@ -46,7 +47,8 @@ public class Auth0DataService extends Auth0BaseService {
 
 	public void ImportPermissionsToResourceServer(File inputFile) throws Exception {
 		String identifier = config.get(Constants.AUTH0_RESOURCE_API_AUDIENCE).toString();
-		List<List<String>> sheetdata = ExcelUtil.readExcelWorkBook(inputFile).get("Auth0_Role_Permission_Mapping");
+		RolePermissionExtractor extractor = new RolePermissionExtractor(inputFile, "Auth0_Role_Permission_Mapping");
+
 		ResourceServer resourceServer = client.resourceServers().get(identifier).execute();
 		ResourceServer rserver = new ResourceServer();
 		List<String> new_scopes = new ArrayList<>();
@@ -54,14 +56,13 @@ public class Auth0DataService extends Auth0BaseService {
 
 		List<Scope> scopes = new ArrayList<>();
 
-		for (int i = 1; i < sheetdata.size(); i++) {
-			if (sheetdata.get(i).size() >= 2) {
-				Scope scope = new Scope(sheetdata.get(i).get(0));
-				scope.setDescription(sheetdata.get(i).get(1));
-				scopes.add(scope);
-				new_scopes.add(scope.getValue());
-			}
+		for (Map.Entry<String, String> entry : extractor.getPermissionDescriptions().entrySet()) {
+			Scope scope = new Scope(entry.getKey());
+			scope.setDescription(entry.getValue());
+			scopes.add(scope);
+			new_scopes.add(scope.getValue());
 		}
+
 		rserver.setScopes(scopes);
 
 		if (!new_scopes.equals(old_scopes)) {
@@ -76,13 +77,13 @@ public class Auth0DataService extends Auth0BaseService {
 
 	public void AlocatePermissionsToRole(File inputFile) throws Exception {
 		List<Role> roleList = client.roles().list(null).execute().getItems();
-		List<List<String>> mappingSheet = ExcelUtil.readExcelWorkBook(inputFile).get("Auth0_Role_Permission_Mapping");
+		RolePermissionExtractor extractor = new RolePermissionExtractor(inputFile, "Auth0_Role_Permission_Mapping");
 		String identifier = config.get(Constants.AUTH0_RESOURCE_API_AUDIENCE).toString();
 
 		for (Role role : roleList) {
 
 			try {
-				List<String> newPermissions = retrieveNewPermissions(mappingSheet, role.getName());
+				List<String> newPermissions =extractor.getRolePermissionMap().get(role.getName());
 
 				List<String> oldPermissions = client.roles().listPermissions(role.getId(), null).execute().getItems()
 						.stream().map(m -> m.getName()).toList();
@@ -99,8 +100,8 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().addPermissions(role.getId(), permissionToAdd).execute();
 					System.out.println("Permissions added to '" + role.getName() + "' Role.");
 				} else {
-					System.out.println("Old Permissions : "+String.join(",", oldPermissions));
-					System.out.println("New Permissions : "+String.join(",", newPermissions));
+					System.out.println("Old Permissions : [" + String.join(",", oldPermissions) + "]");
+					System.out.println("New Permissions : [" + String.join(",", newPermissions) + "]");
 					System.out.println("No Permissions to add for '" + role.getName() + "' Role.");
 				}
 
@@ -117,8 +118,8 @@ public class Auth0DataService extends Auth0BaseService {
 					client.roles().removePermissions(role.getId(), permissionToRemove).execute();
 					System.out.println("Permissions removed from " + role.getName() + " Role.");
 				} else {
-					System.out.println("Old Permissions : "+String.join(",", oldPermissions));
-					System.out.println("New Permissions : "+String.join(",", newPermissions));
+					System.out.println("Old Permissions : [" + String.join(",", oldPermissions) + "]");
+					System.out.println("New Permissions : [" + String.join(",", newPermissions) + "]");
 					System.out.println("No Permissions to remove from '" + role.getName() + "' Role.");
 				}
 				System.out.println("--------------------------------------------------");
@@ -131,28 +132,6 @@ public class Auth0DataService extends Auth0BaseService {
 			}
 		}
 
-	}
-
-	private List<String> retrieveNewPermissions(List<List<String>> sheetdata, String name) throws Exception {
-		List<String> permissions = new ArrayList<>();
-		int index = getRoleIndex(sheetdata.get(0), name);
-		for (List<String> data : sheetdata) {
-			if (data.size() > index && data.get(index).equals("Y")) {
-				permissions.add(data.get(0));
-			}
-		}
-		return permissions;
-	}
-
-	private int getRoleIndex(List<String> list, String name) throws Exception {
-		for (int index = 0; index < list.size(); index++) {
-			String header = list.get(index);
-			if (header.toUpperCase().startsWith("ROLE") && header.split("-").length > 1
-					&& header.split("-")[1].equalsIgnoreCase(name)) {
-				return index;
-			}
-		}
-		throw new Exception(name + " not found in " + list);
 	}
 
 	private static List<String> getAddedItems(List<String> oldList, List<String> newList) {
@@ -243,18 +222,18 @@ public class Auth0DataService extends Auth0BaseService {
 
 	public void SyncUserDetailBetweenAuth0AndApp() {
 		Object APP_URL = config.get(Constants.APP_URL);
-		if(APP_URL == null) {
+		if (APP_URL == null) {
 			System.out.println("[ERROR] APP_URL is found null. Please manually Sync users in DB.");
 			return;
 		}
 
 		String baseApiUrl = APP_URL.toString();
-		String apiKey = config.get(Constants.APP_ACCESS_TOKEN).toString(); 
+		String apiKey = config.get(Constants.APP_ACCESS_TOKEN).toString();
 
 		HttpClient httpClient = HttpClientBuilder.create().build();
 
 		try {
-			HttpPost httpPost = new HttpPost(baseApiUrl+"/api/admin/service/run");
+			HttpPost httpPost = new HttpPost(baseApiUrl + "/api/admin/service/run");
 
 			httpPost.setHeader("Accept", "application/json");
 			httpPost.setHeader("X-Api-Key", apiKey);
@@ -274,7 +253,7 @@ public class Auth0DataService extends Auth0BaseService {
 			}
 
 		} catch (Exception e) {
-			System.out.println("Exception occured while Syncing user : "+e.getMessage());
+			System.out.println("Exception occured while Syncing user : " + e.getMessage());
 		}
 	}
 
