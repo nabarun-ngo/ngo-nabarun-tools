@@ -75,7 +75,7 @@ public class Auth0Commands {
     	System.out.println("-----------------------------");
     	System.out.println("SYNC - Syncing Users and Roles with APP.");
     	System.out.println("-----------------------------");
-    	DataService.SyncUserDetailBetweenAuth0AndApp();
+    	DataService.syncUserDetailBetweenAuth0AndApp();
     	System.out.println("-----------------------------");
     	
     }
