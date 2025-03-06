@@ -247,6 +247,7 @@ public class Auth0DataService extends Auth0BaseService {
 	    headers.put("Correlation-Id", UUID.randomUUID().toString());
 
 	    try {
+	        System.out.println("Initiating service run...");
 	        ServiceRunResponse response = HttpUtil.sendPost(requestUrl, requestBody, headers, ServiceRunResponse.class);
 	        System.out.println("Service Run Logs: ");
 	        for (String log:response.getResponsePayload().getLogs()) {
