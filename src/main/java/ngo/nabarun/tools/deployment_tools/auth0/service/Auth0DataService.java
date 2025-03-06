@@ -2,19 +2,13 @@ package ngo.nabarun.tools.deployment_tools.auth0.service;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -25,11 +19,12 @@ import com.auth0.json.mgmt.ResourceServer;
 import com.auth0.json.mgmt.Role;
 import com.auth0.json.mgmt.Scope;
 import com.auth0.json.mgmt.users.User;
-
 import ngo.nabarun.tools.config.Constants;
 import ngo.nabarun.tools.config.DopplerPropertySource;
+import ngo.nabarun.tools.deployment_tools.auth0.models.ServiceRunResponse;
 import ngo.nabarun.tools.helper.RolePermissionExtractor;
 import ngo.nabarun.tools.util.ExcelUtil;
+import ngo.nabarun.tools.util.HttpUtil;
 
 @Component
 public class Auth0DataService extends Auth0BaseService {
@@ -220,41 +215,47 @@ public class Auth0DataService extends Auth0BaseService {
 		System.out.println("-----------------------------");
 	}
 
-	public void SyncUserDetailBetweenAuth0AndApp() {
-		Object APP_URL = config.get(Constants.APP_URL);
-		if (APP_URL == null) {
-			System.out.println("[ERROR] APP_URL is found null. Please manually Sync users in DB.");
-			return;
-		}
+	
 
-		String baseApiUrl = APP_URL.toString();
-		String apiKey = config.get(Constants.APP_ACCESS_TOKEN).toString();
+	public void syncUserDetailBetweenAuth0AndApp() {
 
-		HttpClient httpClient = HttpClientBuilder.create().build();
+	    Object APP_URL = config.get(Constants.APP_URL);
+	    if (APP_URL == null) {
+	    	System.out.println("APP_URL is null. Please manually sync users in the database.");
+	        return;
+	    }
 
-		try {
-			HttpPost httpPost = new HttpPost(baseApiUrl + "/api/admin/service/run");
+	    String baseApiUrl = APP_URL.toString();
+	    String apiKey = config.get(Constants.APP_ACCESS_TOKEN) != null ? config.get(Constants.APP_ACCESS_TOKEN).toString() : null;
 
-			httpPost.setHeader("Accept", "application/json");
-			httpPost.setHeader("X-Api-Key", apiKey);
-			httpPost.setHeader("Content-Type", "application/json");
-			httpPost.setHeader("Correlation-Id", UUID.randomUUID().toString());
+	    if (apiKey == null || apiKey.isEmpty()) {
+	    	System.out.println("API key is missing. Cannot proceed with user sync.");
+	        return;
+	    }
 
-			String jsonBody = "{ \"name\": \"SYNC_USERS\", \"parameters\": { \"sync_role\": \"Y\" } }";
-			httpPost.setEntity(new StringEntity(jsonBody));
+	    String requestUrl = baseApiUrl + "/api/admin/service/run";
 
-			HttpResponse response = httpClient.execute(httpPost);
-			HttpEntity responseEntity = response.getEntity();
+	    // Request body as a Java object
+	    Map<String, Object> requestBody = new HashMap<>();
+	    requestBody.put("name", "SYNC_USERS");
+	    requestBody.put("parameters", Map.of("sync_role", "Y"));
 
-			if (responseEntity != null) {
-				String responseBody = EntityUtils.toString(responseEntity);
-				System.out.println("Response Code: " + response.getStatusLine().getStatusCode());
-				System.out.println("Response Body: " + responseBody);
+	    Map<String, String> headers = new HashMap<>();
+	    headers.put("Accept", "application/json");
+	    headers.put("X-Api-Key", apiKey);
+	    headers.put("Content-Type", "application/json");
+	    headers.put("Correlation-Id", UUID.randomUUID().toString());
+
+	    try {
+	        ServiceRunResponse response = HttpUtil.sendPost(requestUrl, requestBody, headers, ServiceRunResponse.class);
+	        System.out.println("Service Run Logs: ");
+	        for (String log:response.getResponsePayload().getLogs()) {
+		        System.out.println(log);				
 			}
-
-		} catch (Exception e) {
-			System.out.println("Exception occured while Syncing user : " + e.getMessage());
-		}
+	    } catch (Exception e) {
+	    	System.out.println("Exception occurred while syncing users: "+ e.getMessage());
+	    }
 	}
+
 
 }
